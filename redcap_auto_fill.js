@@ -25,22 +25,34 @@ function getRandomWord() {
 function fillRow(tr) {
 	
 	var date_types = Array('date_ymd', 'date_mdy', 'datetime_ymd', 'datetime_mdy', 'datetime_seconds_ymd', 'datetime_seconds_mdy');
-	
-	
-	// Check a random radio button
+
+	// Check a random radio button (skip checked radios)
 	var radios = $(tr).find("input[type=radio]").filter(":visible");
-	if (radios.length > 0) {
+	var radios_checked = $(tr).find("input[type=radio]:checked");
+	if ((radios.length > 0) && (radios_checked.length == 0)) {
 		var randomnumber = Math.floor(Math.random() * radios.length);
 		radios[randomnumber].checked = true;
 		$(radios[randomnumber]).trigger('click').trigger('blur');
 		return;
 	}
 	
+	// Check for enhanced radios
+	var enhancedchoice = $(tr).find("div.enhancedchoice").filter(":visible");
+	if (enhancedchoice.length > 0 && radios_checked.length == 0) {
+		// Get parent input field for these enhanced radios
+		var randomnumber = Math.floor(Math.random() * enhancedchoice.length);
+		$('label', enhancedchoice[randomnumber]).trigger('click');
+		return;		
+	}
+	
 	// Handle text inputs
 	var inputs = $(tr).find("input[type=text]").each(function(i,e){
 		//console.log('Input: ' + $(e).attr('name'));
-		
-		// Check for field-validation attribute
+
+        // Skip ones with existing values
+        if ($(e).val() !== "") return;
+
+        // Check for field-validation attribute
 		var fv = $(e).attr('fv');
 		
 		if (fv == 'email') {
@@ -54,14 +66,32 @@ function fillRow(tr) {
 			//console.log(b + ": " + p1 + " - " + p2);
 			//redcap_validate(this,'1','111','soft_typed','integer',1)
 			$(e).val('1');
-		} else if ((date_types.indexOf(fv) != -1) && ($(e).parent().find("button[onclick^='set']").length > 0)) {
-			$(e).parent().find("button").trigger('click');
+		} else if ((date_types.indexOf(fv) != -1)) {
+			if (($(e).parent().find("button[onclick^='set']").length > 0)) {
+				$(e).parent().find("button").trigger('click');
+			} else {
+				switch(fv) {
+					case "date_ymd":
+						$(e).val('2016-10-25');
+						break;
+					case "date_mdy":
+						$(e).val('10-25-2016');
+						break;
+					case "date_dmy":
+						$(e).val('25-10-2016');
+						break;					
+				}
+			}
 		} else if (fv == 'number') {
 			$(e).val('2');
 		} else if (fv == 'zip' ) {
 			$(e).val('55112');
+		} else if (fv == 'zipcode' ) {
+			$(e).val('55112');
 		} else if (fv == 'phone') {
-			$(e).val('(555) 867-5309');
+            $(e).val('(555) 867-5309');
+        } else if (fv == 'time') {
+			$(e).val('12:34');
 		} else {
 			//console.log("fv: " + fv);
 			// Get a random word
@@ -82,11 +112,13 @@ function fillRow(tr) {
 	var sliders = $(tr).find("div.slider:first").trigger('onmousedown').find('input').val(50);
 	
 	// Set textarea
-	var textarea = $(tr).find('textarea').val(getRandomWord());
+	var textarea = $(tr).find('textarea');
+	if (textarea && textarea.val() == '') textarea.val(getRandomWord());
 	
 	// Check checkboxes
 	var checkboxes = $(tr).find("input[type=checkbox]").filter(":visible").filter(":not([id='__LOCKRECORD__'])");
-	if (checkboxes.length > 0) {
+	var checkboxes_checked = $('input:checked',tr);
+	if (checkboxes.length > 0 && checkboxes_checked.length == 0) {
 		var randomnumber = Math.floor(Math.random() * checkboxes.length);
 		$(checkboxes[randomnumber]).trigger('click');
 		return;
